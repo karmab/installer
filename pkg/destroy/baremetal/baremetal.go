@@ -3,12 +3,11 @@
 package baremetal
 
 import (
-	"github.com/libvirt/libvirt-go"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-
 	"github.com/openshift/installer/pkg/destroy/providers"
 	"github.com/openshift/installer/pkg/types"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
 // ClusterUninstaller holds the various options for the cluster we want to delete.
@@ -23,7 +22,7 @@ func (o *ClusterUninstaller) Run() error {
 	o.Logger.Debug("Deleting bare metal resources")
 
 	// FIXME: close the connection
-	_, err := libvirt.NewConnect(o.LibvirtURI)
+	_, err := grpc.Dial(o.LibvirtURI)
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to Libvirt daemon")
 	}

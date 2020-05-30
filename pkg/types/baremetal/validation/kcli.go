@@ -3,19 +3,22 @@
 package validation
 
 import (
+	"context"
 	"fmt"
-	"github.com/libvirt/libvirt-go"
+	pb "github.com/karmab/terraform-provider-kcli/kcli-proto"
 	"github.com/openshift/installer/pkg/types/baremetal"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"strings"
+	"time"
 )
 
 func init() {
 	dynamicValidators = append(dynamicValidators, validateInterfaces)
 }
 
-// validateInterfaces ensures that any interfaces required by the platform exist on the libvirt host.
+// validateInterfaces ensures that any interfaces required by the platform exist on the kcli host.
 func validateInterfaces(p *baremetal.Platform, fldPath *field.Path) field.ErrorList {
 	errorList := field.ErrorList{}
 
@@ -36,48 +39,29 @@ func validateInterfaces(p *baremetal.Platform, fldPath *field.Path) field.ErrorL
 	return errorList
 }
 
-// interfaceValidator fetches the valid interface names from a particular libvirt instance, and returns a closure
+// interfaceValidator fetches the valid interface names from a particular kcli instance, and returns a closure
 // to validate if an interface is found among them
-func interfaceValidator(libvirtURI string) (func(string) error, error) {
+func interfaceValidator(Url string) (func(string) error, error) {
 	// Connect to libvirt and obtain a list of interface names
-	interfaces := make(map[string]struct{})
-	var exists = struct{}{}
-	conn, err := libvirt.NewConnect(libvirtURI)
+	conn, err := grpc.Dial(Url, grpc.WithInsecure())
 	if err != nil {
-		return nil, errors.Wrap(err, "could not connect to libvirt")
+		return nil, errors.Wrap(err, "fail to connect to kcli url")
 	}
-
-	networks, err := conn.ListAllNetworks(libvirt.CONNECT_LIST_NETWORKS_ACTIVE)
+	defer conn.Close()
+	k := pb.NewKcliClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	networks, err := k.ListNetworks(ctx, &pb.Empty{})
 	if err != nil {
-		return nil, errors.Wrap(err, "could not list libvirt networks")
+		return nil, errors.Wrap(err, "could not list network interfaces")
 	}
-	for _, network := range networks {
-		networkName, err := network.GetName()
+	interfaceNames := make([]string, len(networks.Networks))
+	for idx, iface := range networks.Networks {
 		if err == nil {
-			bridgeName, err := network.GetBridgeName()
-			if err == nil && bridgeName == networkName {
-				interfaces[networkName] = exists
-			}
-		}
-	}
-	bridges, err := conn.ListAllInterfaces(libvirt.CONNECT_LIST_INTERFACES_ACTIVE)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not list libvirt interfaces")
-	}
-
-	for _, bridge := range bridges {
-		bridgeName, err := bridge.GetName()
-		if err == nil {
-			interfaces[bridgeName] = exists
+			interfaceNames[idx] = iface.Network
 		} else {
-			return nil, errors.Wrap(err, "could not get interface name from libvirt")
+			return nil, errors.Wrap(err, "could not get interface name from kcli")
 		}
-	}
-	interfaceNames := make([]string, len(interfaces))
-	idx := 0
-	for key := range interfaces {
-		interfaceNames[idx] = key
-		idx++
 	}
 
 	// Return a closure to validate if any particular interface is found among interfaceNames

@@ -93,6 +93,7 @@ require (
 	github.com/terraform-providers/terraform-provider-azurerm v0.0.0
 	github.com/terraform-providers/terraform-provider-google v1.20.1-0.20200204003432-77547e3e7d52
 	github.com/terraform-providers/terraform-provider-ignition v1.2.1
+	github.com/karmab/terraform-provider-kcli v0.0.3
 	github.com/terraform-providers/terraform-provider-local v1.4.0
 	github.com/terraform-providers/terraform-provider-openstack v1.25.0
 	github.com/terraform-providers/terraform-provider-random v1.3.2-0.20190925210718-83518d96ae4f

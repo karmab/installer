@@ -1349,6 +1349,7 @@ github.com/terraform-providers/terraform-provider-google/google
 github.com/terraform-providers/terraform-provider-google/version
 # github.com/terraform-providers/terraform-provider-ignition v1.2.1
 github.com/terraform-providers/terraform-provider-ignition/ignition
+github.com/karmab/terraform-provider-kcli/kcli-proto
 # github.com/terraform-providers/terraform-provider-local v1.4.0
 github.com/terraform-providers/terraform-provider-local/local
 # github.com/terraform-providers/terraform-provider-openstack v1.25.0

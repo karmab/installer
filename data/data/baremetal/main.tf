@@ -1,5 +1,5 @@
-provider "libvirt" {
-  uri = var.libvirt_uri
+provider "kcli" {
+  url = var.libvirt_uri
 }
 
 provider "ironic" {
